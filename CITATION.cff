@@ -1,0 +1,20 @@
+cff-version: 1.2.0
+message: "If you use DeepRodent in your research, please cite it as below."
+title: "DeepRodent: A Robust and Generalizable Vision Framework for Automated Rodent Monitoring in Experimental Biology"
+authors:
+  - family-names: "Panboonyuen"
+    given-names: "Teerapong"
+    email: "teerapong.panboonyuen@gmail.com"
+    affiliation: "Khon Kaen University / PBYAIL / Chulalongkorn University"
+version: 1.0.0
+date-released: 2026-07-01
+url: "https://github.com/kaopanboonyuen/DeepRodent"
+repository-code: "https://github.com/kaopanboonyuen/DeepRodent"
+license: MIT
+keywords:
+  - experimental biology
+  - deep learning
+  - instance segmentation
+  - oriented bounding boxes
+  - automated phenotyping
+  - rodent monitoring
