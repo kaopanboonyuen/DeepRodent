@@ -1,0 +1,95 @@
+# =============================================================================
+#   ____                  ____           _            _
+#  |  _ \  ___  ___ _ __ |  _ \ ___   __| | ___ _ __ | |_
+#  | | | |/ _ \/ _ \ '_ \| |_) / _ \ / _` |/ _ \ '_ \| __|
+#  | |_| |  __/  __/ |_) |  _ < (_) | (_| |  __/ | | | |_
+#  |____/ \___|\___| .__/|_| \_\___/ \__,_|\___|_| |_|\__|
+#                   |_|
+#
+#  DeepRodent: A Robust and Generalizable Vision Framework for Automated
+#              Rodent Monitoring in Experimental Biology
+# -----------------------------------------------------------------------------
+#  Author       : Teerapong Panboonyuen
+#  Contact      : teerapong.panboonyuen@gmail.com
+#  Source Code  : https://github.com/kaopanboonyuen/DeepRodent
+#  License      : MIT (see LICENSE)
+# =============================================================================
+
+# ---------------------------------------------------------------------------
+# Model configuration
+# ---------------------------------------------------------------------------
+model:
+  in_channels: 3
+  base_channels: 32
+  num_classes: 1          # rodent = 0
+  num_anchors: 1
+  num_prototypes: 32
+  embed_dim: 64
+  motion_dim: 4
+
+# ---------------------------------------------------------------------------
+# Dataset configuration (Section 3)
+# ---------------------------------------------------------------------------
+data:
+  root: "./data/DeepRodentDataset"
+  img_size: 640
+  num_classes: 1
+  split_ratio: [0.6, 0.2, 0.2]   # train / val / test
+  batch_size: 16
+  num_workers: 8
+
+# ---------------------------------------------------------------------------
+# Augmentation (Section 4.6)
+# ---------------------------------------------------------------------------
+augment:
+  hflip_p: 0.5
+  rotate_deg: 30.0
+  scale_range: [0.5, 1.5]
+  hsv_gains: [0.015, 0.7, 0.4]
+  motion_blur_p: 0.2
+
+# ---------------------------------------------------------------------------
+# Optimization (Section 4.3-4.5)
+# ---------------------------------------------------------------------------
+train:
+  epochs: 100
+  lr0: 0.001          # eta_0
+  momentum: 0.937      # mu
+  weight_decay: 0.0005 # w_d
+  amp: true
+  grad_clip: 10.0
+  log_interval: 50
+  checkpoint_dir: "checkpoints"
+  checkpoint_every: 1
+  device: "cuda"
+
+# ---------------------------------------------------------------------------
+# Loss weights (Eq. 11, 18, 22)
+# ---------------------------------------------------------------------------
+loss:
+  cls: 1.0        # lambda_1
+  box: 1.0        # lambda_2
+  seg: 1.0        # lambda_3
+  obb: 1.0        # lambda_4
+  temp: 0.5       # lambda_5
+  domain: 0.5     # lambda_6
+  temp_final: 0.5 # lambda_7
+  kl_beta: 0.1    # beta
+  focal_gamma: 2.0
+
+# ---------------------------------------------------------------------------
+# Evaluation (Section 4.8-4.9)
+# ---------------------------------------------------------------------------
+eval:
+  conf_thresh: 0.25
+  iou_thresh: 0.5
+  seeds: [42, 43, 44]
+
+# ---------------------------------------------------------------------------
+# Reproducibility artifacts
+# ---------------------------------------------------------------------------
+artifacts:
+  project_page: "https://kaopanboonyuen.github.io/DeepRodent"
+  source_code: "https://github.com/kaopanboonyuen/DeepRodent"
+  pretrained_weights: "https://huggingface.co/kaopanboonyuen/DeepRodent"
+  interactive_demo: "https://huggingface.co/spaces/kaopanboonyuen/DeepRodent-Demo"
