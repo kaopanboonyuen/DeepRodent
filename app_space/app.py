@@ -3,6 +3,7 @@
 A Robust and Generalizable Vision Framework for Automated Rodent Monitoring
 
 Gradio inference UI for the DeepRodent DeepRodent-Seg model.
+Deployed on Hugging Face Spaces (ZeroGPU-compatible).
 
 Model summary (auto-detected from DeepRodent_WEIGHT.pt):
     Architecture : DeepRodent-Seg (instance segmentation)
@@ -10,10 +11,17 @@ Model summary (auto-detected from DeepRodent_WEIGHT.pt):
     Classes      : 1  ->  {0: "rodent"}
     Input size   : 640 x 640
 
-Run:
-    pip install gradio ultralytics opencv-python-headless
+Weight source:
+    https://huggingface.co/kaopanboonyuen/DeepRodent
+
+Run locally:
+    pip install -r requirements.txt
     python app.py
 """
+
+# `spaces` must be imported before torch-using libraries so its CUDA
+# emulation patch is in place when torch/ultralytics initialize.
+import spaces
 
 import time
 from pathlib import Path
@@ -22,12 +30,14 @@ import cv2
 import gradio as gr
 import numpy as np
 from PIL import Image
+from huggingface_hub import hf_hub_download
 from ultralytics import YOLO
 
 # --------------------------------------------------------------------------
 # Config
 # --------------------------------------------------------------------------
-MODEL_PATH = "DeepRodent_WEIGHT.pt"          # place next to this app.py
+MODEL_REPO = "kaopanboonyuen/DeepRodent"
+MODEL_FILENAME = "DeepRodent_WEIGHT.pt"
 IMG_SIZE = 640
 DEFAULT_CONF = 0.25
 DEFAULT_IOU = 0.45
@@ -39,8 +49,20 @@ TEXT_COLOR = (255, 255, 255)
 # --------------------------------------------------------------------------
 # Load model once at startup
 # --------------------------------------------------------------------------
+print(f"Downloading weights from {MODEL_REPO}...")
+MODEL_PATH = hf_hub_download(repo_id=MODEL_REPO, filename=MODEL_FILENAME)
+
 print("Loading DeepRodent model...")
 model = YOLO(MODEL_PATH)
+
+# Per ZeroGPU docs: models must be moved to 'cuda' at module level (not
+# inside a @spaces.GPU function) for efficient placement. This is a no-op
+# on CPU-only hardware / local runs without a GPU.
+try:
+    model.to("cuda")
+except Exception as e:
+    print(f"Running on CPU (no CUDA device available): {e}")
+
 CLASS_NAMES = model.names
 print(f"Model loaded. Task={model.task} | Classes={CLASS_NAMES}")
 
@@ -116,6 +138,7 @@ def draw_results(image_rgb: np.ndarray, result, conf_thres: float, show_masks: b
     return canvas, count
 
 
+@spaces.GPU(duration=30)
 def run_inference(image, conf_thres, iou_thres, show_masks, show_labels):
     if image is None:
         return None, "_Upload or select an image to begin._"
@@ -147,6 +170,14 @@ def run_inference(image, conf_thres, iou_thres, show_masks, show_labels):
     return Image.fromarray(annotated), summary
 
 
+def _batch_duration(files, conf_thres, iou_thres, show_masks, show_labels):
+    # ~8s per image is a safe upper bound for a nano seg model at 640px;
+    # keeps queue priority high for small batches while covering large ones.
+    n = len(files) if files else 1
+    return min(max(n * 8, 15), 170)
+
+
+@spaces.GPU(duration=_batch_duration)
 def run_batch(files, conf_thres, iou_thres, show_masks, show_labels):
     if not files:
         return [], "_No images uploaded._"
@@ -393,15 +424,17 @@ with gr.Blocks(
                     output_image = gr.Image(type="pil", label="Detection Result", height=340)
                     summary_md = gr.Markdown("_Run detection to see results here._")
 
-            gr.Examples(
-                examples=[
-                    ["rodent_sample_images/rodent_sample_images_01.jpg"],
-                    ["rodent_sample_images/rodent_sample_images_02.jpg"],
-                    ["rodent_sample_images/rodent_sample_images_03.jpg"],
-                ],
-                inputs=input_image,
-                label="Sample Images (from rodent_sample_images/)",
-            )
+            _sample_dir = Path("rodent_sample_images")
+            _sample_paths = [
+                str(_sample_dir / f"rodent_sample_images_{i:02d}.jpg") for i in (1, 2, 3)
+            ]
+            _existing_samples = [[p] for p in _sample_paths if Path(p).exists()]
+            if _existing_samples:
+                gr.Examples(
+                    examples=_existing_samples,
+                    inputs=input_image,
+                    label="Sample Images (from rodent_sample_images/)",
+                )
 
             run_btn.click(
                 fn=run_inference,
@@ -446,11 +479,11 @@ with gr.Blocks(
                 |---|---|
                 | **Project** | DeepRodent |
                 | **Author** | Kao |
-                | **Architecture** | DeepRodent-Seg |
+                | **Architecture** | DeepRodent-Seg (Ultralytics) |
                 | **Task** | Instance Segmentation |
                 | **Classes** | `{dict(CLASS_NAMES)}` |
                 | **Input resolution** | {IMG_SIZE} × {IMG_SIZE} |
-                | **Weight file** | `{MODEL_PATH}` |
+                | **Weight file** | [`{MODEL_REPO}`](https://huggingface.co/{MODEL_REPO}) / `{MODEL_FILENAME}` |
 
                 DeepRodent detects and segments rodents in images for automated
                 monitoring pipelines — e.g. lab facility surveillance, pest tracking,
