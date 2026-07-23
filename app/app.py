@@ -32,8 +32,8 @@ IMG_SIZE = 640
 DEFAULT_CONF = 0.25
 DEFAULT_IOU = 0.45
 
-BOX_COLOR = (255, 61, 90)        # BGR-agnostic, used as RGB below
-MASK_COLOR = (255, 61, 90)
+BOX_COLOR = (175, 82, 222)        # Apple "purple" accent, RGB
+MASK_COLOR = (94, 92, 230)        # Apple "indigo" accent, RGB
 TEXT_COLOR = (255, 255, 255)
 
 # --------------------------------------------------------------------------
@@ -176,51 +176,183 @@ def run_batch(files, conf_thres, iou_thres, show_masks, show_labels):
 # --------------------------------------------------------------------------
 CUSTOM_CSS = """
 :root {
-    --dr-bg: #0f1117;
-    --dr-panel: #161a23;
-    --dr-accent: #ff3d5a;
-    --dr-accent-soft: rgba(255, 61, 90, 0.12);
-    --dr-text: #eaecef;
-    --dr-subtext: #9aa1ad;
+    --dr-bg: #f5f5f7;
+    --dr-panel: #ffffff;
+    --dr-border: #e5e5ea;
+    --dr-text: #1d1d1f;
+    --dr-subtext: #86868b;
+    --dr-accent1: #ff375f;
+    --dr-accent2: #af52de;
+    --dr-accent3: #5e5ce6;
+    --dr-accent4: #007aff;
 }
+
+* {
+    font-family: -apple-system, "SF Pro Display", "SF Pro Text", "Inter", "Helvetica Neue", Arial, sans-serif !important;
+}
+
 .gradio-container {
-    background: radial-gradient(1200px 600px at 10% -10%, #1a1f2b 0%, var(--dr-bg) 55%) !important;
-    font-family: 'Inter', 'Segoe UI', sans-serif !important;
+    background: linear-gradient(180deg, #fbfbfd 0%, #f5f5f7 100%) !important;
+    color: var(--dr-text) !important;
 }
+
+/* ---------- Header ---------- */
 #dr-header {
+    position: relative;
     text-align: center;
-    padding: 28px 16px 18px 16px;
+    padding: 48px 16px 26px 16px;
+    overflow: hidden;
+}
+#dr-header::before {
+    content: "";
+    position: absolute;
+    top: -120px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 620px;
+    height: 320px;
+    background: radial-gradient(circle at 30% 40%, rgba(255,55,95,0.16), transparent 60%),
+                radial-gradient(circle at 65% 55%, rgba(94,92,230,0.16), transparent 60%),
+                radial-gradient(circle at 50% 65%, rgba(0,122,255,0.14), transparent 60%);
+    filter: blur(30px);
+    pointer-events: none;
+    z-index: 0;
+    animation: dr-glow-drift 10s ease-in-out infinite alternate;
+}
+@keyframes dr-glow-drift {
+    0%   { transform: translateX(-52%) scale(1); }
+    100% { transform: translateX(-48%) scale(1.08); }
+}
+#dr-header h1, #dr-header p, #dr-header .dr-badge {
+    position: relative;
+    z-index: 1;
 }
 #dr-header h1 {
-    font-size: 2.4rem;
-    margin-bottom: 4px;
-    background: linear-gradient(90deg, #ff3d5a, #ff9a5a);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    font-weight: 800;
+    font-size: 2.7rem;
+    margin-bottom: 6px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: #1d1d1f !important;
+    background-image: linear-gradient(100deg, var(--dr-accent1) 0%, var(--dr-accent2) 35%, var(--dr-accent3) 65%, var(--dr-accent4) 100%) !important;
+    background-size: 200% auto !important;
+    background-clip: text !important;
+    -webkit-background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+    animation: dr-shimmer 6s ease-in-out infinite;
+}
+@keyframes dr-shimmer {
+    0%   { background-position: 0% 50%; }
+    50%  { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+@supports not ((background-clip: text) or (-webkit-background-clip: text)) {
+    #dr-header h1 {
+        -webkit-text-fill-color: initial !important;
+        color: #1d1d1f !important;
+        background: none !important;
+    }
 }
 #dr-header p {
     color: var(--dr-subtext);
-    font-size: 1.02rem;
+    font-size: 1.05rem;
+    font-weight: 400;
     margin-top: 0;
 }
+#dr-header p.dr-author {
+    font-size: 0.82rem;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    color: #a1a1a6;
+    margin: 4px 0 16px 0;
+    text-transform: uppercase;
+}
+
+/* ---------- Badges ---------- */
 .dr-badge {
     display: inline-block;
-    background: var(--dr-accent-soft);
-    color: var(--dr-accent);
-    border: 1px solid rgba(255, 61, 90, 0.35);
-    padding: 3px 12px;
+    background: rgba(0, 0, 0, 0.035);
+    color: #48484a;
+    border: 1px solid var(--dr-border);
+    padding: 5px 14px;
     border-radius: 999px;
-    font-size: 0.78rem;
-    font-weight: 600;
-    letter-spacing: 0.02em;
-    margin: 2px 4px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    letter-spacing: 0.01em;
+    margin: 3px 5px;
+    backdrop-filter: blur(6px);
 }
+
+/* ---------- Panels / Cards ---------- */
 .dr-panel {
-    background: var(--dr-panel) !important;
-    border: 1px solid #232838 !important;
-    border-radius: 16px !important;
+    background: rgba(255, 255, 255, 0.72) !important;
+    backdrop-filter: blur(20px) saturate(180%) !important;
+    -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.6) !important;
+    border-radius: 20px !important;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.03), 0 12px 32px rgba(0,0,0,0.06) !important;
 }
+
+/* ---------- Tabs ---------- */
+.tab-nav, [role="tablist"] {
+    background: transparent !important;
+    border-bottom: 1px solid var(--dr-border) !important;
+}
+button[role="tab"] {
+    color: var(--dr-subtext) !important;
+    font-weight: 500 !important;
+    border-radius: 10px 10px 0 0 !important;
+}
+button[role="tab"].selected, button[role="tab"][aria-selected="true"] {
+    color: var(--dr-text) !important;
+    font-weight: 600 !important;
+}
+
+/* ---------- Buttons ---------- */
+button.primary, .primary {
+    background: linear-gradient(100deg, var(--dr-accent1), var(--dr-accent3)) !important;
+    border: none !important;
+    color: #ffffff !important;
+    border-radius: 14px !important;
+    font-weight: 600 !important;
+    box-shadow: 0 4px 14px rgba(94, 92, 230, 0.25) !important;
+    transition: transform 0.15s ease, box-shadow 0.15s ease !important;
+}
+button.primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px rgba(94, 92, 230, 0.32) !important;
+}
+
+/* ---------- Inputs / sliders / accordions ---------- */
+input, textarea, .gr-box, .block {
+    border-radius: 14px !important;
+}
+.gr-box, .wrap, .container {
+    border-color: var(--dr-border) !important;
+}
+label, .label-wrap span {
+    color: var(--dr-text) !important;
+    font-weight: 500 !important;
+}
+.gradio-container input[type="range"] {
+    accent-color: var(--dr-accent3) !important;
+}
+
+/* ---------- Markdown / tables ---------- */
+.prose table {
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid var(--dr-border) !important;
+}
+.prose th {
+    background: #f5f5f7 !important;
+    color: var(--dr-text) !important;
+}
+.prose code {
+    background: rgba(0,0,0,0.045) !important;
+    color: #af52de !important;
+    border-radius: 6px;
+}
+
 footer {visibility: hidden}
 """
 
@@ -233,7 +365,8 @@ with gr.Blocks(
         <div id="dr-header">
             <h1>🐭 DeepRodent</h1>
             <p>A Robust and Generalizable Vision Framework for Automated Rodent Monitoring</p>
-            <span class="dr-badge">YOLOv8n-seg</span>
+            <p class="dr-author">Author: Teerapong Panboonyuen</p>
+            <span class="dr-badge">DeepRodent-Seg</span>
             <span class="dr-badge">Instance Segmentation</span>
             <span class="dr-badge">1 class · rodent</span>
         </div>
@@ -312,7 +445,8 @@ with gr.Blocks(
                 | Field | Value |
                 |---|---|
                 | **Project** | DeepRodent |
-                | **Architecture** | YOLOv8n-seg (Ultralytics) |
+                | **Author** | Kao |
+                | **Architecture** | DeepRodent-Seg |
                 | **Task** | Instance Segmentation |
                 | **Classes** | `{dict(CLASS_NAMES)}` |
                 | **Input resolution** | {IMG_SIZE} × {IMG_SIZE} |
@@ -332,7 +466,7 @@ with gr.Blocks(
 
     gr.HTML(
         "<div style='text-align:center; color:#5b6270; padding: 10px 0 4px 0; font-size:0.85rem;'>"
-        "DeepRodent · Vision framework for automated rodent monitoring"
+        "DeepRodent · Vision framework for automated rodent monitoring · Author: Kao"
         "</div>"
     )
 
@@ -340,7 +474,23 @@ if __name__ == "__main__":
     # theme/css passed here for compatibility across Gradio versions
     # (Gradio >=6 expects them in launch(), older versions accept them
     # here too via the fallback below)
+    apple_theme = gr.themes.Base(
+        primary_hue="purple",
+        secondary_hue="blue",
+        neutral_hue="gray",
+        font=[
+            gr.themes.Font("-apple-system"),
+            gr.themes.Font("BlinkMacSystemFont"),
+            gr.themes.Font("Segoe UI"),
+            gr.themes.Font("sans-serif"),
+        ],
+    ).set(
+        body_background_fill="#f5f5f7",
+        block_background_fill="#ffffff",
+        block_border_color="#e5e5ea",
+        block_radius="20px",
+    )
     try:
-        demo.launch(theme=gr.themes.Soft(primary_hue="rose", neutral_hue="slate"), css=CUSTOM_CSS)
+        demo.launch(theme=apple_theme, css=CUSTOM_CSS)
     except TypeError:
         demo.launch()
